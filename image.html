@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>图片相册 | 精美展示</title>
+  <!-- Tailwind CSS v3 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome -->
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <!-- AOS Animation Library -->
+  <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#2D3748',
+            secondary: '#4A5568',
+            accent: '#3182CE',
+            dark: '#1A202C',
+            light: '#F7FAFC'
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+          animation: {
+            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          }
+        }
+      }
+    }
+  </script>
+  
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .text-shadow {
+        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+      .text-shadow-lg {
+        text-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      }
+      .backdrop-blur {
+        backdrop-filter: blur(8px);
+      }
+      .transition-transform-opacity {
+        transition-property: transform, opacity;
+      }
+      .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+      }
+      .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    }
+    
+    /* 自定义样式 */
+    .photo-card {
+      @apply bg-white rounded rounded-lg overflow-hidden shadow-md shadow-md hover:shadow-xl transition-all duration-300 transform hover:scale-105 cursor-pointer;
+    }
+    
+    .photo-card img {
+      @apply w-full h-full object-cover transition-transform duration-500 hover:scale-110;
+    }
+    
+    .skeleton {
+      @apply animate-pulse-slow bg-gray-200 rounded-lg;
+    }
+    
+    .modal {
+      @apply fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-90 opacity-0 pointer-events-none transition-opacity duration-300;
+    }
+    
+    .modal.active {
+      @apply opacity-100 pointer-events-auto;
+    }
+    
+    .modal-content {
+      @apply relative max-w-6xl max-h-[90vh] transform scale-95 transition-transform duration-300;
+    }
+    
+    .modal.active .modal-content {
+      @apply scale-100;
+    }
+    
+    .modal-close {
+      @apply absolute top-4 right-4 text-white hover:text-gray-300 transition-colors;
+    }
+    
+    .modal-nav {
+      @apply absolute top-1/2 transform -translate-y-1/2 text-white text-3xl hover:text-gray-300 transition-colors z-10;
+    }
+    
+    .modal-prev {
+      @apply left-4;
+    }
+    
+    .modal-next {
+      @apply right-4;
+    }
+    
+    .pagination-btn {
+      @apply px-3 py-1 rounded-md text-sm font-medium transition-colors;
+    }
+    
+    .pagination-btn.active {
+      @apply bg-accent text-white;
+    }
+    
+    .pagination-btn:not(.active) {
+      @apply text-gray-600 hover:bg-gray-100;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <!-- 顶部导航栏 -->
+  <header class="bg-white shadow-sm sticky top-0 z-10">
+    <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+      <h1 class="text-2xl font-bold text-primary flex items-center">
+        <i class="fa fa-camera-retro mr-2 text-accent"></i>
+        <span>Bowen私人图片珍藏</span>
+      </h1>
+      <div class="flex items-center space-x-4">
+        <div class="relative">
+          <input type="text" id="search-input" placeholder="搜索图片..." 
+                 class="pl-10 pr-4 py-2 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent">
+          <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+        </div>
+        <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-200 transition-colors">
+          <i class="fa fa-moon-o text-gray-600"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 主要内容区 -->
+  <main class="container mx-auto px-4 py-8">
+    <!-- 相册标题和统计信息 -->
+    <div class="mb-8 text-center" data-aos="fade-up">
+      <h2 class="text-3xl font-bold text-primary mb-2">本地图片作品集</h2>
+      <p class="text-gray-600">共 <span id="total-photos">0</span> 张照片</p>
+    </div>
+    
+    <!-- 分类筛选 -->
+    <div class="mb-8 flex flex-wrap justify-center gap-2" data-aos="fade-up" data-aos-delay="100">
+      <button class="category-btn active px-4 py-2 rounded-full bg-accent text-white hover:bg-opacity-90 transition-colors" data-category="all">
+        全部
+      </button>
+      <button class="category-btn px-4 py-2 rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors" data-category="landscape">
+        英雄联盟
+      </button>
+      <button class="category-btn px-4 py-2 rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors" data-category="city">
+        原神
+      </button>
+      <button class="category-btn px-4 py-2 rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors" data-category="nature">
+        其他
+      </button>
+    </div>
+    
+    <!-- 图片网格 -->
+    <div id="photo-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
+      <!-- 图片将通过JavaScript动态加载 -->
+    </div>
+    
+    <!-- 加载更多/分页 -->
+    <div class="mt-12 flex justify-center" data-aos="fade-up">
+      <div id="pagination" class="flex space-x-1">
+        <!-- 分页按钮将通过JavaScript动态加载 -->
+      </div>
+    </div>
+  </main>
+
+  <!-- 图片查看器模态框 -->
+  <div id="photo-modal" class="modal">
+    <div class="modal-content">
+      <button class="modal-close text-3xl">
+        <i class="fa fa-times"></i>
+      </button>
+      <button class="modal-nav modal-prev">
+        <i class="fa fa-chevron-left"></i>
+      </button>
+      <button class="modal-nav modal-next">
+        <i class="fa fa-chevron-right"></i>
+      </button>
+      <div class="relative">
+        <img id="modal-image" src="" alt="大图查看" class="max-w-full max-h-[90vh] object-contain rounded-lg">
+        <div id="modal-loader" class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-lg hidden">
+          <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
+        </div>
+      </div>
+      <div class="mt-4 text-white text-center">
+        <h3 id="modal-title" class="text-xl font-medium"></h3>
+        <p id="modal-caption" class="text-gray-300">点击图片可关闭查看</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 页脚 -->
+  <footer class="bg-gray-800 text-white py-8 mt-12">
+    <div class="container mx-auto px-4 text-center">
+      <p>© 2025 本地图片相册 | 设计与开发</p>
+      <div class="mt-4 flex justify justify-center space-x-4">
+        <a href="#" class="text-gray-400 hover:text-white transition-colors">
+          <i class="fa fa-github text-xl"></i>
+        </a>
+        <a href="#" class="text-gray-400 hover:text-white transition-colors">
+          <i class="fa fa-twitter text-xl"></i>
+        </a>
+        <a href="#" class="text-gray-400 hover:text-white transition-colors">
+          <i class="fa fa-instagram text-xl"></i>
+        </a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // 初始化AOS动画库
+    document.addEventListener('DOMContentLoaded', function() {
+      AOS.init({
+        duration: 800,
+        easing: 'ease-out',
+        once: true
+      });
+      
+      // 初始化相册
+      initPhotoAlbum();
+    });
+
+    // **************************
+    // 请在这里列出你的图片文件
+    // 确保这些文件都在同级的image文件夹中
+    // **************************
+    const imageFiles = [
+      // 示例：
+      // { name: "img1.jpg", category: "landscape", title: "山川美景", caption: "壮丽的山川景色" },
+      // { name: "img2.png", category: "city", title: "城市夜景", caption: "繁华的都市夜景" },
+      
+      // 请替换成你自己的图片信息
+//city是原神，nature是其他，landspace是lol
+      { name: "《原神》明霄灯海 甘雨 刻晴 黑裤袜3440x1440游戏壁纸.jpg", category: "city", title: "明霄灯海", caption: "甘雨 刻晴" },
+      { name: "Zelda.jpg", category: "nature", title: "塞尔达", caption: "塞尔达是天" },
+      { name: "霞.jpg", category: "landscape", title: "英雄联盟", caption: "凤凰传奇" },
+      { name: "img4.jpg", category: "landscape", title: "KDA", caption: "POP/Star" },
+      { name: "img5.jpg", category: "nature", title: "这是啥啊", caption: "我忘了" },
+      { name: "200F6093053-7.jpg", category: "nature", title: "小姐姐", caption: "全是白丝" },
+      { name: "1054256.jpg", category: "nature", title: "自然风光", caption: "壮丽的自然山水景观" },
+      { name: "1109233.jpg", category: "city", title: "诺艾尔", caption: "女仆大战4小宝" },
+      { name: "1110631.png", category: "city", title: "蒙德", caption: "风起蒙德" },
+      { name: "1110664.png", category: "city", title: "菲谢尔", caption: "现身吧！奥兹！" },
+      { name: "1111113.jpg", category: "city", title: "七七", caption: "想喝椰奶了" },
+    ];
+
+
+    // 生成图片数据（自动拼接路径）
+    const photoData = imageFiles.map((file, index) => ({
+      id: index + 1,
+      url: `./image/${file.name}`,       // 同级image文件夹路径
+      thumbnail: `./image/${file.name}`, // 同级image文件夹路径
+      title: file.title,
+      caption: file.caption,
+      category: file.category
+    }));
+
+    // 相册配置
+    const albumConfig = {
+      photosPerPage: 15,
+      currentPage: 1,
+      currentCategory: 'all',
+      currentSearchTerm: '',
+      currentPhotoIndex: 0
+    };
+
+    // DOM元素
+    const photoGrid = document.getElementById('photo-grid');
+    const pagination = document.getElementById('pagination');
+    const totalPhotosElement = document.getElementById('total-photos');
+    const photoModal = document.getElementById('photo-modal');
+    const modalImage = document.getElementById('modal-image');
+    const modalTitle = document.getElementById('modal-title');
+    const modalCaption = document.getElementById('modal-caption');
+    const modalClose = document.querySelector('.modal-close');
+    const modalPrev = document.querySelector('.modal-prev');
+    const modalNext = document.querySelector('.modal-next');
+    const modalLoader = document.getElementById('modal-loader');
+    const searchInput = document.getElementById('search-input');
+    const themeToggle = document.getElementById('theme-toggle');
+    const categoryButtons = document.querySelectorAll('.category-btn');
+
+    // 初始化相册
+    function initPhotoAlbum() {
+      // 更新照片总数
+      totalPhotosElement.textContent = photoData.length;
+      
+      // 渲染第一页照片
+      renderPhotos();
+      
+      // 渲染分页
+      renderPagination();
+      
+      // 添加事件监听器
+      addEventListeners();
+    }
+
+    // 渲染照片
+    function renderPhotos() {
+      // 清空照片网格
+      photoGrid.innerHTML = '';
+      
+      // 筛选照片
+      const filteredPhotos = filterPhotos();
+      
+      // 计算分页
+      const startIndex = (albumConfig.currentPage - 1) * albumConfig.photosPerPage;
+      const endIndex = startIndex + albumConfig.photosPerPage;
+      const paginatedPhotos = filteredPhotos.slice(startIndex, endIndex);
+      
+      // 如果没有照片，显示提示信息
+      if (paginatedPhotos.length === 0) {
+        const noPhotosMessage = document.createElement('div');
+        noPhotosMessage.className = 'col-span-full text-center py-12 text-gray-500';
+        noPhotosMessage.innerHTML = `
+          <i class="fa fa-image text-4xl mb-4"></i>
+          <p>没有找到符合条件的照片</p>
+          <p class="mt-2 text-sm">请检查image文件夹是否存在且包含图片</p>
+        `;
+        photoGrid.appendChild(noPhotosMessage);
+        return;
+      }
+      
+      // 渲染照片
+      paginatedPhotos.forEach((photo, index) => {
+        const photoCard = document.createElement('div');
+        photoCard.className = 'photo-card';
+        photoCard.setAttribute('data-aos', 'fade-up');
+        photoCard.setAttribute('data-aos-delay', (index % 10) * 100);
+        
+        // 创建骨架屏
+        const skeleton = document.createElement('div');
+        skeleton.className = 'skeleton aspect-w-1 aspect-h-1 w-full h-48';
+        
+        // 创建图片
+        const img = document.createElement('img');
+        img.src = photo.thumbnail;
+        img.alt = photo.title;
+        img.className = 'w-full h-48 object-cover opacity-0 transition-opacity duration-500';
+        
+        // 图片加载完成后显示图片，隐藏骨架屏
+        img.onload = function() {
+          skeleton.classList.add('hidden');
+          img.classList.remove('opacity-0');
+        };
+        
+        // 图片加载失败（文件不存在或路径错误）
+        img.onerror = function() {
+          skeleton.classList.add('hidden');
+          img.src = 'https://via.placeholder.com/400x400?text=图片加载失败';
+          img.classList.remove('opacity-0');
+        };
+        
+        // 添加到卡片
+        photoCard.appendChild(skeleton);
+        photoCard.appendChild(img);
+        
+        // 点击查看大图
+        photoCard.addEventListener('click', () => {
+          openPhotoModal(photo);
+        });
+        
+        // 添加到网格
+        photoGrid.appendChild(photoCard);
+      });
+    }
+
+    // 渲染分页
+    function renderPagination() {
+      // 清空分页
+      pagination.innerHTML = '';
+      
+      // 筛选照片
+      const filteredPhotos = filterPhotos();
+      
+      // 计算总页数
+      const totalPages = Math.ceil(filteredPhotos.length / albumConfig.photosPerPage);
+      
+      // 如果只有一页，不显示分页
+      if (totalPages <= 1) {
+        return;
+      }
+      
+      // 添加"上一页"按钮
+      const prevButton = document.createElement('button');
+      prevButton.className = 'pagination-btn';
+      prevButton.innerHTML = '<i class="fa fa-chevron-left"></i>';
+      prevButton.disabled = albumConfig.currentPage === 1;
+      prevButton.addEventListener('click', () => {
+        if (albumConfig.currentPage > 1) {
+          albumConfig.currentPage--;
+          renderPhotos();
+          renderPagination();
+          scrollToTop();
+        }
+      });
+      pagination.appendChild(prevButton);
+      
+      // 添加页码按钮
+      const maxVisiblePages = 5;
+      let startPage = Math.max(1, albumConfig.currentPage - Math.floor(maxVisiblePages / 2));
+      let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+      
+      if (endPage - startPage + 1 < maxVisiblePages) {
+        startPage = Math.max(1, endPage - maxVisiblePages + 1);
+      }
+      
+      for (let i = startPage; i <= endPage; i++) {
+        const pageButton = document.createElement('button');
+        pageButton.className = `pagination-btn ${i === albumConfig.currentPage ? 'active' : ''}`;
+        pageButton.textContent = i;
+        pageButton.addEventListener('click', () => {
+          albumConfig.currentPage = i;
+          renderPhotos();
+          renderPagination();
+          scrollToTop();
+        });
+        pagination.appendChild(pageButton);
+      }
+      
+      // 添加"下一页"按钮
+      const nextButton = document.createElement('button');
+      nextButton.className = 'pagination-btn';
+      nextButton.innerHTML = '<i class="fa fa-chevron-right"></i>';
+      nextButton.disabled = albumConfig.currentPage === totalPages;
+      nextButton.addEventListener('click', () => {
+        if (albumConfig.currentPage < totalPages) {
+          albumConfig.currentPage++;
+          renderPhotos();
+          renderPagination();
+          scrollToTop();
+        }
+      });
+      pagination.appendChild(nextButton);
+    }
+
+    // 筛选照片
+    function filterPhotos() {
+      return photoData.filter(photo => {
+        // 分类筛选
+        const categoryMatch = albumConfig.currentCategory === 'all' || photo.category === albumConfig.currentCategory;
+        
+        // 搜索筛选
+        const searchMatch = albumConfig.currentSearchTerm === '' || 
+                           photo.title.toLowerCase().includes(albumConfig.currentSearchTerm.toLowerCase()) || 
+                           photo.caption.toLowerCase().includes(albumConfig.currentSearchTerm.toLowerCase());
+        
+        return categoryMatch && searchMatch;
+      });
+    }
+
+    // 打开照片模态框
+    function openPhotoModal(photo) {
+      // 显示加载动画
+      modalLoader.classList.remove('hidden');
+      
+      // 找到当前照片的索引
+      albumConfig.currentPhotoIndex = photoData.findIndex(p => p.id === photo.id);
+      
+      // 更新模态框内容
+      modalTitle.textContent = photo.title;
+      modalCaption.textContent = photo.caption;
+      
+      // 加载大图
+      modalImage.onload = function() {
+        // 隐藏加载动画
+        modalLoader.classList.add('hidden');
+      };
+      
+      modalImage.onerror = function() {
+        modalLoader.classList.add('hidden');
+        modalImage.src = 'https://via.placeholder.com/800x600?text=图片加载失败';
+      };
+      
+      modalImage.src = photo.url;
+      
+      // 显示模态框
+      photoModal.classList.add('active');
+      
+      // 禁止背景滚动
+      document.body.style.overflow = 'hidden';
+    }
+
+    // 关闭照片模态框
+    function closePhotoModal() {
+      photoModal.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    // 查看上一张照片
+    function showPrevPhoto() {
+      const filteredPhotos = filterPhotos();
+      if (filteredPhotos.length === 0) return;
+      
+      albumConfig.currentPhotoIndex--;
+      if (albumConfig.currentPhotoIndex < 0) {
+        albumConfig.currentPhotoIndex = filteredPhotos.length - 1;
+      }
+      
+      openPhotoModal(filteredPhotos[albumConfig.currentPhotoIndex]);
+    }
+
+    // 查看下一张照片
+    function showNextPhoto() {
+      const filteredPhotos = filterPhotos();
+      if (filteredPhotos.length === 0) return;
+      
+      albumConfig.currentPhotoIndex++;
+      if (albumConfig.currentPhotoIndex >= filteredPhotos.length) {
+        albumConfig.currentPhotoIndex = 0;
+      }
+      
+      openPhotoModal(filteredPhotos[albumConfig.currentPhotoIndex]);
+    }
+
+    // 滚动到顶部
+    function scrollToTop() {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }
+
+    // 添加事件监听器
+    function addEventListeners() {
+      // 关闭模态框
+      modalClose.addEventListener('click', closePhotoModal);
+      
+      // 点击图片关闭模态框
+      modalImage.addEventListener('click', closePhotoModal);
+      
+      // 上一张/下一张
+      modalPrev.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showPrevPhoto();
+      });
+      
+      modalNext.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showNextPhoto();
+      });
+      
+      // 键盘导航
+      document.addEventListener('keydown', (e) => {
+        if (photoModal.classList.contains('active')) {
+          if (e.key === 'Escape') {
+            closePhotoModal();
+          } else if (e.key === 'ArrowLeft') {
+            showPrevPhoto();
+          } else if (e.key === 'ArrowRight') {
+            showNextPhoto();
+          }
+        }
+      });
+      
+      // 点击模态框背景关闭
+      photoModal.addEventListener('click', (e) => {
+        if (e.target === photoModal) {
+          closePhotoModal();
+        }
+      });
+      
+      // 搜索
+      searchInput.addEventListener('input', (e) => {
+        albumConfig.currentSearchTerm = e.target.value;
+        albumConfig.currentPage = 1;
+        renderPhotos();
+        renderPagination();
+      });
+      
+      // 主题切换
+      themeToggle.addEventListener('click', () => {
+        document.body.classList.toggle('dark');
+        const icon = themeToggle.querySelector('i');
+        if (document.body.classList.contains('dark')) {
+          icon.classList.remove('fa-moon-o');
+          icon.classList.add('fa-sun-o');
+        } else {
+          icon.classList.remove('fa-sun-o');
+          icon.classList.add('fa-moon-o');
+        }
+      });
+      
+      // 分类筛选
+      categoryButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          // 更新按钮样式
+          categoryButtons.forEach(btn => {
+            btn.classList.remove('active', 'bg-accent', 'text-white');
+            btn.classList.add('bg-gray-200', 'text-gray-700');
+          });
+          button.classList.add('active', 'bg-accent', 'text-white');
+          button.classList.remove('bg-gray-200', 'text-gray-700');
+          
+          // 更新分类
+          albumConfig.currentCategory = button.dataset.category;
+          albumConfig.currentPage = 1;
+          renderPhotos();
+          renderPagination();
+        });
+      });
+    }
+  </script>
+</body>
+</html>
