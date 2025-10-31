@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bowen AI Assistant - 杜岳潼的AI问答系统</title>
+    <!-- Tailwind CSS v3 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- 统一的 Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1E40AF',
+                        secondary: '#3B82F6',
+                        accent: '#60A5FA',
+                        light: '#EFF6FF',
+                        dark: '#1E293B'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    animation: {
+                        'typing': 'typing 1.5s steps(30, end)',
+                        'blink': 'blink .7s infinite',
+                    },
+                    keyframes: {
+                        typing: {
+                            'from': { width: '0' },
+                            'to': { width: '100%' }
+                        },
+                        blink: {
+                            'from, to': { borderColor: 'transparent' },
+                            '50%': { borderColor: '#3B82F6' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .glass-effect {
+                background: rgba(255, 255, 255, 0.1);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+            }
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
+            .transition-all-300 {
+                transition: all 0.3s ease;
+            }
+            .scrollbar-thin {
+                scrollbar-width: thin;
+            }
+            .scrollbar-thin::-webkit-scrollbar {
+                width: 6px;
+            }
+            .scrollbar-thin::-webkit-scrollbar-track {
+                background: rgba(255, 255, 255, 0.1);
+            }
+            .scrollbar-thin::-webkit-scrollbar-thumb {
+                background: rgba(59, 130, 246, 0.5);
+                border-radius: 3px;
+            }
+            .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+                background: rgba(59, 130, 246, 0.8);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
+    <!-- 背景图 -->
+    <div class="fixed inset-0 z-0 opacity-10 pointer-events-none">
+        <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/613eba31a366417aa1e4ef5d82005ad0~tplv-a9rns2rl98-image.image?rcl=2025103115335820587C294B185884E61E&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1764488069&x-signature=Wi2uqZEFpItmdGkod7TNZzKh%2FYo%3D" 
+             alt="背景" class="w-full h-full object-cover">
+    </div>
+
+    <!-- 顶部导航栏 -->
+    <header class="bg-white bg-opacity-90 backdrop-blur-sm shadow-sm z-10 sticky top-0">
+        <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <img src="https://p9-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/c6324f8f3e1348a19b474ce755d287fc~tplv-a9rns2rl98-image.image?rcl=2025103115335820587C294B185884E61E&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1764488063&x-signature=feoln8maSGHZs0AyjfoYnnqQsCk%3D" 
+                     alt="Bowen AI Logo" class="h-10 w-10">
+                <div>
+                    <h1 class="text-xl font-bold text-primary">Bowen AI Assistant</h1>
+                    <p class="text-xs text-gray-500">杜岳潼的AI问答系统</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-100 transition-all-300">
+                    <i class="fa fa-moon-o text-gray-600"></i>
+                </button>
+                <button id="user-menu" class="flex items-center space-x-2 p-2 rounded-full hover:bg-gray-100 transition-all-300">
+                    <div class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center">
+                        <i class="fa fa-user"></i>
+                    </div>
+                    <span class="hidden md:inline text-sm font-medium">用户</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主要内容区 -->
+    <main class="flex-grow container mx-auto px-4 py-6 flex flex-col md:flex-row gap-6 z-10 relative">
+        <!-- 左侧边栏 - 对话历史 -->
+        <aside class="w-full md:w-64 lg:w-72 bg-white rounded-xl shadow-sm p-4 flex flex-col">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="font-bold text-lg text-gray-800">对话历史</h2>
+                <button id="new-chat" class="p-2 rounded-full hover:bg-gray-100 transition-all-300 text-primary">
+                    <i class="fa fa-plus"></i>
+                </button>
+            </div>
+            <div id="chat-history" class="flex-grow overflow-y-auto scrollbar-thin space-y-2">
+                <!-- 对话历史将通过JS动态添加 -->
+                <div class="chat-item p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-all-300 active-chat bg-blue-50 border-l-4 border-primary">
+                    <p class="text-sm font-medium truncate">新对话</p>
+                    <p class="text-xs text-gray-500 truncate">今天</p>
+                </div>
+            </div>
+            <div class="mt-4 pt-4 border-t border-gray-100">
+                <div class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-all-300">
+                    <div class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center">
+                        <i class="fa fa-user"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium">杜岳潼Bowen</p>
+                        <p class="text-xs text-gray-500">网站所有者</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 中间区域 - 对话界面 -->
+        <section class="flex-grow flex flex-col bg-white rounded-xl shadow-sm overflow-hidden">
+            <!-- 对话头部 -->
+            <div class="p-4 border-b border-gray-100 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-full bg-primary bg-opacity-10 flex items-center justify-center">
+                        <i class="fa fa-comments text-primary"></i>
+                    </div>
+                    <div>
+                        <h2 class="font-bold text-lg">AI 助手</h2>
+                        <p class="text-xs text-gray-500">由杜岳潼Bowen开发</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button id="clear-chat" class="p-2 rounded-full hover:bg-gray-100 transition-all-300 text-gray-600">
+                        <i class="fa fa-trash-o"></i>
+                    </button>
+                    <button id="chat-options" class="p-2 rounded-full hover:bg-gray-100 transition-all-300 text-gray-600">
+                        <i class="fa fa-ellipsis-v"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 对话内容区 -->
+            <div id="chat-messages" class="flex-grow p-4 overflow-y-auto scrollbar-thin space-y-6">
+                <!-- 欢迎消息 -->
+                <div class="flex items-start space-x-3">
+                    <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                        <i class="fa fa-robot text-white"></i>
+                    </div>
+                    <div class="bg-gray-100 rounded-lg p-4 max-w-[80%]">
+                        <p class="text-gray-800">你好！我是由杜岳潼Bowen开发的AI助手。有什么我可以帮助你的吗？</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 输入区域 -->
+            <div class="p-4 border-t border-gray-100">
+                <form id="message-form" class="flex items-center space-x-2">
+                    <input type="text" id="message-input" placeholder="输入你的问题..." 
+                           class="flex-grow px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all-300">
+                    <button type="submit" class="p-2 rounded-full bg-primary text-white hover:bg-primary/90 transition-all-300">
+                        <i class="fa fa-paper-plane"></i>
+                    </button>
+                </form>
+                <div class="mt-2 text-xs text-gray-500 flex items-center justify-center">
+                    <i class="fa fa-info-circle mr-1"></i>
+                    <span>由杜岳潼Bowen提供技术支持</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 右侧边栏 - 信息面板 -->
+        <aside class="w-full md:w-64 lg:w-80 bg-white rounded-xl shadow-sm p-4 flex flex-col">
+            <!-- 所有者信息 -->
+            <div class="mb-6">
+                <h2 class="font-bold text-lg text-gray-800 mb-4">关于所有者</h2>
+                <div class="flex flex-col items-center text-center">
+                    <div class="w-20 h-20 rounded-full bg-primary text-white flex items-center justify-center text-2xl mb-3">
+                        <span>B</span>
+                    </div>
+                    <h3 class="font-bold text-xl">杜岳潼</h3>
+                    <p class="text-primary font-medium">Bowen</p>
+                    <p class="text-sm text-gray-500 mt-2">AI技术爱好者 & 全栈开发者</p>
+                    <div class="flex space-x-3 mt-3">
+                        <a href="#" class="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-all-300 text-gray-600">
+                            <i class="fa fa-github"></i>
+                        </a>
+                        <a href="#" class="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-all-300 text-gray-600">
+                            <i class="fa fa-linkedin"></i>
+                        </a>
+                        <a href="#" class="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-all-300 text-gray-600">
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 模型信息 -->
+            <div class="mb-6">
+                <h2 class="font-bold text-lg text-gray-800 mb-4">模型信息</h2>
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-medium text-gray-600">模型名称</span>
+                        <span class="text-sm font-medium">deepseek-v3.2-exp</span>
+                    </div>
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-medium text-gray-600">API版本</span>
+                        <span class="text-sm font-medium">v1</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm font-medium text-gray-600">响应时间</span>
+                        <span class="text-sm font-medium">~1秒</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 快速提示 -->
+            <div class="flex-grow">
+                <h2 class="font-bold text-lg text-gray-800 mb-4">快速提示</h2>
+                <div class="space-y-3">
+                    <div class="prompt-item p-3 bg-blue-50 rounded-lg cursor-pointer hover:bg-blue-100 transition-all-300">
+                        <p class="text-sm">什么是人工智能？</p>
+                    </div>
+                    <div class="prompt-item p-3 bg-blue-50 rounded-lg cursor-pointer hover:bg-blue-100 transition-all-300">
+                        <p class="text-sm">解释量子计算的基本原理</p>
+                    </div>
+                    <div class="prompt-item p-3 bg-blue-50 rounded-lg cursor-pointer hover:bg-blue-100 transition-all-300">
+                        <p class="text-sm">如何学习编程？</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-white bg-opacity-90 backdrop-blur-sm shadow-sm z-10 py-4">
+        <div class="container mx-auto px-4 text-center text-sm text-gray-500">
+            <p>© 2025 Bowen AI Assistant. 由 <span class="font-medium text-primary">杜岳潼Bowen</span> 开发</p>
+        </div>
+    </footer>
+
+    <!-- 加载中模态框 -->
+    <div id="loading-modal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
+        <div class="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"></div>
+        <div class="bg-white rounded-xl p-6 flex flex-col items-center space-y-4 z-10">
+            <div class="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+            <h3 class="font-bold text-lg">AI正在思考...</h3>
+            <p class="text-gray-500">请稍候，正在生成回答</p>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        // DOM元素
+        const chatMessages = document.getElementById('chat-messages');
+        const messageForm = document.getElementById('message-form');
+        const messageInput = document.getElementById('message-input');
+        const loadingModal = document.getElementById('loading-modal');
+        const newChatButton = document.getElementById('new-chat');
+        const clearChatButton = document.getElementById('clear-chat');
+        const chatHistory = document.getElementById('chat-history');
+        const promptItems = document.querySelectorAll('.prompt-item');
+        const themeToggle = document.getElementById('theme-toggle');
+
+        // API配置
+        const API_URL = 'https://api.modelarts-maas.com/v1/chat/completions';
+        const MODEL_NAME = 'deepseek-v3.2-exp';
+        const API_KEY = 'HEtGqbA-Td1uXAaB6LmvsWIG_cqOLpebxxhOYAAnl9zKwlCjA_K1EYDaPpzDz3YgJGWDXAUWZe6LJerFtlVjXQ';
+
+        // 对话历史
+        let conversations = [
+            {
+                id: 'conv-1',
+                title: '新对话',
+                date: new Date().toLocaleDateString(),
+                messages: [
+                    {
+                        role: 'assistant',
+                        content: '你好！我是由杜岳潼Bowen开发的AI助手。有什么我可以帮助你的吗？'
+                    }
+                ]
+            }
+        ];
+        let currentConversationId = 'conv-1';
+
+        // 获取当前对话
+        function getCurrentConversation() {
+            return conversations.find(conv => conv.id === currentConversationId);
+        }
+
+        // 添加消息到对话
+        function addMessageToConversation(role, content) {
+            const conversation = getCurrentConversation();
+            conversation.messages.push({ role, content });
+            
+            // 如果是用户消息，更新对话标题
+            if (role === 'user' && conversation.title === '新对话') {
+                conversation.title = content.length > 30 ? content.substring(0, 30) + '...' : content;
+                updateChatHistory();
+            }
+        }
+
+        // 渲染消息
+        function renderMessage(role, content, isNew = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'flex items-start space-x-3';
+            
+            if (role === 'user') {
+                messageDiv.classList.add('flex-row-reverse');
+                messageDiv.innerHTML = `
+                    <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                        <i class="fa fa-user text-gray-600"></i>
+                    </div>
+                    <div class="bg-primary text-white rounded-lg p-4 max-w-[80%]">
+                        <p>${content}</p>
+                    </div>
+                `;
+            } else {
+                messageDiv.innerHTML = `
+                    <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                        <i class="fa fa-robot text-white"></i>
+                    </div>
+                    <div class="bg-gray-100 rounded-lg p-4 max-w-[80%]">
+                        <p class="text-gray-800">${content}</p>
+                    </div>
+                `;
+            }
+            
+            chatMessages.appendChild(messageDiv);
+            
+            // 滚动到底部
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // 如果是新消息，添加动画
+            if (isNew) {
+                messageDiv.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => {
+                    messageDiv.classList.remove('opacity-0', 'translate-y-2');
+                    messageDiv.classList.add('transition-all', 'duration-300');
+                }, 10);
+            }
+        }
+
+        // 渲染对话历史
+        function updateChatHistory() {
+            chatHistory.innerHTML = '';
+            
+            conversations.forEach(conversation => {
+                const isActive = conversation.id === currentConversationId;
+                const chatItem = document.createElement('div');
+                chatItem.className = `chat-item p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-all-300 ${isActive ? 'active-chat bg-blue-50 border-l-4 border-primary' : ''}`;
+                chatItem.innerHTML = `
+                    <p class="text-sm font-medium truncate">${conversation.title}</p>
+                    <p class="text-xs text-gray-500 truncate">${conversation.date}</p>
+                `;
+                chatItem.addEventListener('click', () => switchConversation(conversation.id));
+                chatHistory.appendChild(chatItem);
+            });
+        }
+
+        // 切换对话
+        function switchConversation(id) {
+            currentConversationId = id;
+            
+            // 清空当前对话界面
+            chatMessages.innerHTML = '';
+            
+            // 渲染选中对话的所有消息
+            const conversation = getCurrentConversation();
+            conversation.messages.forEach(message => {
+                renderMessage(message.role, message.content);
+            });
+            
+            // 更新对话历史选中状态
+            updateChatHistory();
+        }
+
+        // 创建新对话
+        function createNewConversation() {
+            const newId = `conv-${Date.now()}`;
+            const newConversation = {
+                id: newId,
+                title: '新对话',
+                date: new Date().toLocaleDateString(),
+                messages: [
+                    {
+                        role: 'assistant',
+                        content: '你好！我是由杜岳潼Bowen开发的AI助手。有什么我可以帮助你的吗？'
+                    }
+                ]
+            };
+            
+            conversations.unshift(newConversation);
+            currentConversationId = newId;
+            
+            // 更新界面
+            chatMessages.innerHTML = '';
+            renderMessage('assistant', newConversation.messages[0].content);
+            updateChatHistory();
+        }
+
+        // 清除当前对话
+        function clearCurrentConversation() {
+            const conversation = getCurrentConversation();
+            conversation.messages = [
+                {
+                    role: 'assistant',
+                    content: '你好！我是由杜岳潼Bowen开发的AI助手。有什么我可以帮助你的吗？'
+                }
+            ];
+            
+            // 更新界面
+            chatMessages.innerHTML = '';
+            renderMessage('assistant', conversation.messages[0].content);
+        }
+
+        // 发送消息到API
+        async function sendMessageToAPI(userMessage) {
+            try {
+                // 显示加载中
+                loadingModal.classList.remove('hidden');
+                
+                // 获取当前对话的消息历史
+                const conversation = getCurrentConversation();
+                const messages = conversation.messages.map(msg => ({
+                    role: msg.role,
+                    content: msg.content
+                }));
+                
+                // 添加用户消息到历史
+                messages.push({ role: 'user', content: userMessage });
+                
+                // 发送请求到API
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: MODEL_NAME,
+                        messages: messages,
+                        temperature: 0.7,
+                        stream: true
+                    })
+                });
+                
+                // 检查响应状态
+                if (!response.ok) {
+                    throw new Error(`API请求失败: ${response.statusText}`);
+                }
+                
+                // 处理流式响应
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let aiResponse = '';
+                let aiMessageElement = null;
+                
+                while (true) {
+                    const { done, value } = await reader.read();
+                    
+                    if (done) {
+                        break;
+                    }
+                    
+                    // 解码响应内容
+                    const chunk = decoder.decode(value, { stream: true });
+                    
+                    // 处理SSE格式的响应
+                    const lines = chunk.split('\n').filter(line => line.trim() !== '');
+                    
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = line.substring(6);
+                            
+                            if (data === '[DONE]') {
+                                continue;
+                            }
+                            
+                            try {
+                                const parsed = JSON.parse(data);
+                                
+                                if (parsed.choices && parsed.choices[0].delta.content) {
+                                    aiResponse += parsed.choices[0].delta.content;
+                                    
+                                    // 如果还没有创建AI消息元素，创建它
+                                    if (!aiMessageElement) {
+                                        aiMessageElement = document.createElement('div');
+                                        aiMessageElement.className = 'flex items-start space-x-3';
+                                        aiMessageElement.innerHTML = `
+                                            <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                                                <i class="fa fa-robot text-white"></i>
+                                            </div>
+                                            <div class="bg-gray-100 rounded-lg p-4 max-w-[80%]">
+                                                <p class="text-gray-800 ai-response"></p>
+                                            </div>
+                                        `;
+                                        chatMessages.appendChild(aiMessageElement);
+                                    }
+                                    
+                                    // 更新AI响应内容
+                                    const responseElement = aiMessageElement.querySelector('.ai-response');
+                                    responseElement.textContent = aiResponse;
+                                    
+                                    // 滚动到底部
+                                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                                }
+                            } catch (error) {
+                                console.error('解析响应失败:', error);
+                            }
+                        }
+                    }
+                }
+                
+                // 添加AI响应到对话历史
+                addMessageToConversation('assistant', aiResponse);
+                
+            } catch (error) {
+                console.error('API请求错误:', error);
+                
+                // 显示错误消息
+                renderMessage('assistant', '抱歉，处理你的请求时发生错误。请稍后再试。', true);
+                
+            } finally {
+                // 隐藏加载中
+                loadingModal.classList.add('hidden');
+            }
+        }
+
+        // 事件监听器
+        messageForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const userMessage = messageInput.value.trim();
+            
+            if (userMessage) {
+                // 添加用户消息到界面
+                renderMessage('user', userMessage, true);
+                
+                // 添加用户消息到对话历史
+                addMessageToConversation('user', userMessage);
+                
+                // 清空输入框
+                messageInput.value = '';
+                
+                // 发送消息到API
+                await sendMessageToAPI(userMessage);
+            }
+        });
+
+        // 新对话按钮
+        newChatButton.addEventListener('click', createNewConversation);
+        
+        // 清除对话按钮
+        clearChatButton.addEventListener('click', clearCurrentConversation);
+        
+        // 快速提示点击
+        promptItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const prompt = item.querySelector('p').textContent;
+                messageInput.value = prompt;
+                messageForm.dispatchEvent(new Event('submit'));
+            });
+        });
+        
+        // 主题切换
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            const icon = themeToggle.querySelector('i');
+            
+            if (icon.classList.contains('fa-moon-o')) {
+                icon.classList.remove('fa-moon-o');
+                icon.classList.add('fa-sun-o');
+            } else {
+                icon.classList.remove('fa-sun-o');
+                icon.classList.add('fa-moon-o');
+            }
+        });
+        
+        // 初始化
+        updateChatHistory();
+    </script>
+</body>
+</html>
