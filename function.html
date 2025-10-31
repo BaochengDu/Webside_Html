@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>杜岳潼Bowen - 个人网站</title>
+    <!-- Tailwind CSS v3 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- AOS 动画库 -->
+    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#8B5CF6',
+                        accent: '#EC4899',
+                        dark: '#1E293B',
+                        light: '#F8FAFC'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    animation: {
+                        'float': 'float 3s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .text-shadow-lg {
+                text-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            }
+            .bg-gradient-primary {
+                background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);
+            }
+            .card-hover {
+                transition: all 0.3s ease;
+            }
+            .card-hover:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            }
+            .glass-effect {
+                background: rgba(255, 255, 255, 0.1);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-gray-900 to-dark min-h-screen text-light">
+    <!-- 背景装饰 -->
+    <div class="fixed inset-0 z-0 overflow-hidden">
+        <div class="absolute top-0 left-0 w-1/3 h-1/3 bg-primary/20 rounded-full filter blur-[100px] -translate-x-1/2 -translate-y-1/2"></div>
+        <div class="absolute top-1/2 right-0 w-1/3 h-1/3 bg-secondary/20 rounded-full filter blur-[100px] translate-x-1/2 -translate-y-1/2"></div>
+        <div class="absolute bottom-0 left-1/2 w-1/3 h-1/3 bg-accent/20 rounded-full filter blur-[100px] -translate-x-1/2 translate-y-1/2"></div>
+    </div>
+
+    <div class="relative z-10 container mx-auto px-4 py-8">
+        <!-- 创作者信息 -->
+        <header class="text-center mb-12" data-aos="fade-up">
+            <div class="flex justify-center mb-4">
+                <div class="relative w-32 h-32 rounded-full overflow-hidden border-4 border-white/20 shadow-lg">
+                    <img src="image/touxiang.png" 
+                         alt="杜岳潼Bowen" 
+                         class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                </div>
+            </div>
+            <h1 class="text-4xl md:text-5xl font-bold mb-2 text-shadow-lg">杜岳潼 <span class="text-primary">Bowen</span></h1>
+            <p class="text-xl text-gray-300 max-w-2xl mx-auto">网站创作者</p>
+            <div class="mt-6 flex justify-center space-x-4">
+                <a href="#" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-primary transition-colors">
+                    <i class="fa fa-github"></i>
+                </a>
+                <a href="#" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-primary transition-colors">
+                    <i class="fa fa-linkedin"></i>
+                </a>
+                <a href="#" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-primary transition-colors">
+                    <i class="fa fa-twitter"></i>
+                </a>
+            </div>
+        </header>
+
+        <!-- 选项菜单卡片网格 -->
+        <main class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- 相册一览 -->
+            <a href="album.html" class="group">
+                <div class="card-hover rounded-xl overflow-hidden bg-white/5 backdrop-blur-sm border border-white/10" data-aos="fade-up" data-aos-delay="100">
+                    <div class="h-48 overflow-hidden relative">
+                        <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/f902d53e64324e6c8e907c8a82f32528~tplv-a9rns2rl98-image.image?rcl=202510312022257CCF410696B4EE2084C3&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1764505373&x-signature=gXsRbWJfckSv%2BxKrOZ5QzdTQacs%3D" 
+                             alt="相册一览" 
+                             class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+                        <div class="absolute inset-0 bg-gradient-to-t from-dark to-transparent"></div>
+                    </div>
+                    <div class="p-6">
+                        <div class="flex items-center mb-3">
+                            <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center mr-3">
+                                <i class="fa fa-picture-o text-primary"></i>
+                            </div>
+                            <h2 class="text-xl font-bold">相册一览</h2>
+                        </div>
+                        <p class="text-gray-300 mb-4">浏览精选照片集，记录生活中的精彩瞬间和创作历程。</p>
+                        <div class="flex items-center text-primary group-hover:translate-x-2 transition-transform">
+                            <span>查看相册</span>
+                            <i class="fa fa-arrow-right ml-2"></i>
+                        </div>
+                    </div>
+                </div>
+            </a>
+
+            <!-- 小游戏试玩 -->
+            <a href="games.html" class="group">
+                <div class="card-hover rounded-xl overflow-hidden bg-white/5 backdrop-blur-sm border border-white/10" data-aos="fade-up" data-aos-delay="200">
+                    <div class="h-48 overflow-hidden relative">
+                        <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/ed8ed51e20904c73b87b426e623a21af~tplv-a9rns2rl98-image.image?rcl=202510312022257CCF410696B4EE2084C3&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1764505381&x-signature=B3IWU%2BJ4xyj1FbBihWaVjdMBp4E%3D" 
+                             alt="小游戏试玩" 
+                             class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+                        <div class="absolute inset-0 bg-gradient-to-t from-dark to-transparent"></div>
+                    </div>
+                    <div class="p-6">
+                        <div class="flex items-center mb-3">
+                            <div class="w-10 h-10 rounded-full bg-secondary/20 flex items-center justify-center mr-3">
+                                <i class="fa fa-gamepad text-secondary"></i>
+                            </div>
+                            <h2 class="text-xl font-bold">小游戏试玩</h2>
+                        </div>
+                        <p class="text-gray-300 mb-4">体验精心制作的互动小游戏，挑战自己的反应和策略能力。</p>
+                        <div class="flex items-center text-secondary group-hover:translate-x-2 transition-transform">
+                            <span>开始游戏</span>
+                            <i class="fa fa-arrow-right ml-2"></i>
+                        </div>
+                    </div>
+                </div>
+            </a>
+
+            <!-- AI专业版 -->
+            <a href="ai-pro.html" class="group">
+                <div class="card-hover rounded-xl overflow-hidden bg-white/5 backdrop-blur-sm border border-white/10" data-aos="fade-up" data-aos-delay="300">
+                    <div class="h-48 overflow-hidden relative">
+                        <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/d8cab252182d41aa924188edacd5cc21~tplv-a9rns2rl98-image.image?rcl=202510312022257CCF410696B4EE2084C3&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1764505388&x-signature=UkXpdU%2BBSE1OhVfACHgzCKLEKuQ%3D" 
+                             alt="AI专业版" 
+                             class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+                        <div class="absolute inset-0 bg-gradient-to-t from-dark to-transparent"></div>
+                    </div>
+                    <div class="p-6">
+                        <div class="flex items-center mb-3">
+                            <div class="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center mr-3">
+                                <i class="fa fa-brain text-accent"></i>
+                            </div>
+                            <h2 class="text-xl font-bold">AI专业版</h2>
+                        </div>
+                        <p class="text-gray-300 mb-4">探索高级人工智能工具，提升工作效率和创意表达。</p>
+                        <div class="flex items-center text-accent group-hover:translate-x-2 transition-transform">
+                            <span>探索AI</span>
+                            <i class="fa fa-arrow-right ml-2"></i>
+                        </div>
+                    </div>
+                </div>
+            </a>
+
+            <!-- 杜岳潼的AI分身 -->
+            <a href="ai-avatar.html" class="group">
+                <div class="card-hover rounded-xl overflow-hidden bg-white/5 backdrop-blur-sm border border-white/10" data-aos="fade-up" data-aos-delay="400">
+                    <div class="h-48 overflow-hidden relative">
+                        <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/3802209b859f4410b9c4825687a585fb~tplv-a9rns2rl98-image.image?rcl=202510312022257CCF410696B4EE2084C3&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1764505398&x-signature=FwRcRRK8U7oCntd2wq9CrT2sUFE%3D" 
+                             alt="杜岳潼的AI分身" 
+                             class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+                        <div class="absolute inset-0 bg-gradient-to-t from-dark to-transparent"></div>
+                    </div>
+                    <div class="p-6">
+                        <div class="flex items-center mb-3">
+                            <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center mr-3">
+                                <i class="fa fa-user-circle text-primary"></i>
+                            </div>
+                            <h2 class="text-xl font-bold">杜岳潼的AI分身</h2>
+                        </div>
+                        <p class="text-gray-300 mb-4">与AI驱动的杜岳潼数字分身对话，获取信息和建议。</p>
+                        <div class="flex items-center text-primary group-hover:translate-x-2 transition-transform">
+                            <span>开始对话</span>
+                            <i class="fa fa-arrow-right ml-2"></i>
+                        </div>
+                    </div>
+                </div>
+            </a>
+
+            <!-- 待开发中 -->
+            <div class="card-hover rounded-xl overflow-hidden bg-white/5 backdrop-blur-sm border border-white/10 opacity-70" data-aos="fade-up" data-aos-delay="500">
+                <div class="h-48 flex items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900">
+                    <div class="text-center">
+                        <i class="fa fa-cogs text-5xl text-gray-500"></i>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div class="flex items-center mb-3">
+                        <div class="w-10 h-10 rounded-full bg-gray-700/50 flex items-center justify-center mr-3">
+                            <i class="fa fa-clock-o text-gray-400"></i>
+                        </div>
+                        <h2 class="text-xl font-bold">待开发中...</h2>
+                    </div>
+                    <p class="text-gray-400 mb-4">更多精彩功能正在开发中，敬请期待！</p>
+                    <div class="flex items-center text-gray-400">
+                        <span>敬请期待</span>
+                        <i class="fa fa-spinner fa-spin ml-2"></i>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- 页脚 -->
+        <footer class="mt-16 text-center text-gray-400">
+            <p>&copy; 2025 杜岳潼Bowen. 保留所有权利。</p>
+            <div class="mt-4 flex justify-center space-x-4">
+                <a href="#" class="hover:text-primary transition-colors">隐私政策</a>
+                <a href="#" class="hover:text-primary transition-colors">使用条款</a>
+                <a href="#" class="hover:text-primary transition-colors">联系我们</a>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // 初始化AOS动画库
+        document.addEventListener('DOMContentLoaded', function() {
+            AOS.init({
+                duration: 800,
+                easing: 'ease-in-out',
+                once: true
+            });
+
+            // 添加卡片悬停效果
+            const cards = document.querySelectorAll('.card-hover');
+            cards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.classList.add('shadow-xl');
+                });
+                card.addEventListener('mouseleave', function() {
+                    this.classList.remove('shadow-xl');
+                });
+            });
+
+            // 添加平滑滚动
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        window.scrollTo({
+                            top: target.offsetTop,
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
