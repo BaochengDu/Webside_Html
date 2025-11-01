@@ -98,61 +98,28 @@
     <div id="setupModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fade-in">
         <div class="bg-white rounded-lg shadow-modal w-full max-w-md mx-4 overflow-hidden">
             <div class="p-6">
-                <h2 class="text-2xl font-bold text-center mb-6">设置AI聊天对象</h2>
+                <h2 class="text-2xl font-bold text-center mb-6">你更喜欢称呼杜岳潼的</h2>
                 
                 <!-- AI名字设置 -->
                 <div class="mb-6">
-                    <label class="block text-gray-700 font-medium mb-2">AI名字</label>
+                    <label class="block text-gray-700 font-medium mb-2">名字</label>
                     <div class="flex flex-wrap gap-2 mb-2">
-                        <button id="btnEnglishName" class="px-4 py-2 bg-primary text-white rounded-md hover:bg-opacity-90 transition-colors">
-                            英语 (Bowen)
+                        <button id="btnChineseName" class="px-4 py-2 bg-primary text-white rounded-md hover:bg-opacity-90 transition-colors">
+                            中文名字 (杜岳潼)
                         </button>
-                        <button id="btnChineseName" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors">
-                            中文 (杜岳潼)
+                        <button id="btnEnglishName" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors">
+                            英文名字 (Bowen)
                         </button>
                         <button id="btnCustomName" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors">
-                            自定义
+                            自定义昵称
                         </button>
                     </div>
                     <div id="customNameContainer" class="hidden">
-                        <input type="text" id="customNameInput" placeholder="输入自定义名字" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                        <input type="text" id="customNameInput" placeholder="输入自定义昵称" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
                     </div>
                 </div>
                 
-                <!-- AI头像设置 -->
-                <div class="mb-6">
-                    <label class="block text-gray-700 font-medium mb-2">AI头像</label>
-                    <div class="flex items-center gap-4 mb-4">
-                        <div id="avatarPreview" class="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
-                            <img src="image/touxiang.png" 
-                                 alt="默认头像" class="w-full h-full object-cover">
-                        </div>
-                        <div class="flex-1">
-                            <div class="flex flex-wrap gap-2 mb-2">
-                                <button id="btnDefaultAvatar" class="px-4 py-2 bg-primary text-white rounded-md hover:bg-opacity-90 transition-colors">
-                                    默认头像
-                                </button>
-                                <button id="btnUploadAvatar" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors">
-                                    上传头像
-                                </button>
-                            </div>
-                            <input type="file" id="avatarUpload" accept="image/*" class="hidden">
-                        </div>
-                    </div>
-                    
-                    <!-- 头像尺寸设置 -->
-                    <div>
-                        <label class="block text-gray-700 font-medium mb-2">头像尺寸</label>
-                        <div class="flex gap-2">
-                            <button id="btnCircleAvatar" class="flex-1 py-2 bg-primary text-white rounded-md hover:bg-opacity-90 transition-colors">
-                                圆形
-                            </button>
-                            <button id="btnSquareAvatar" class="flex-1 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors">
-                                正方形
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                
                 
                 <!-- 开始聊天按钮 -->
                 <button id="btnStartChat" class="w-full py-3 bg-primary text-white rounded-md font-medium hover:bg-opacity-90 transition-colors flex items-center justify-center">
@@ -178,13 +145,10 @@
                          alt="AI头像" class="w-full h-full object-cover">
                 </div>
                 <div>
-                    <h3 id="chatName" class="font-medium">Bowen</h3>
+                    <h3 id="chatName" class="font-medium">杜岳潼</h3>
                     <p class="text-xs text-gray-500">在线</p>
                 </div>
             </div>
-            <button id="btnSettings" class="text-gray-500 hover:text-primary">
-                <i class="fa fa-cog text-xl"></i>
-            </button>
         </div>
         
         <!-- 消息区域 -->
@@ -215,9 +179,9 @@
         const API_KEY = 'HEtGqbA-Td1uXAaB6LmvsWIG_cqOLpebxxhOYAAnl9zKwlCjA_K1EYDaPpzDz3YgJGWDXAUWZe6LJerFtlVjXQ';
         
         // 全局变量
-        let aiName = 'Bowen';
-        let aiAvatar = 'https://p9-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/dcfea288d2c243fb97a0870b01426c11~tplv-a9rns2rl98-image.image?rcl=20251101152644484E77C140B28E0CA99C&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1764574018&x-signature=8rZjO6DVGrWEs0n4jxkIdp1CPyQ%3D';
-        let avatarShape = 'circle'; // 'circle' 或 'square'
+        let aiName = '杜岳潼'; // 默认使用中文名字
+        let aiAvatar = 'image/touxiang.png'; // 默认头像路径
+        let avatarShape = 'circle'; // 固定为圆形
         let messageHistory = []; // 存储消息历史，用于多轮对话
         
         // DOM 元素
@@ -228,14 +192,7 @@
         const btnCustomName = document.getElementById('btnCustomName');
         const customNameContainer = document.getElementById('customNameContainer');
         const customNameInput = document.getElementById('customNameInput');
-        const btnDefaultAvatar = document.getElementById('btnDefaultAvatar');
-        const btnUploadAvatar = document.getElementById('btnUploadAvatar');
-        const avatarUpload = document.getElementById('avatarUpload');
-        const avatarPreview = document.getElementById('avatarPreview');
-        const btnCircleAvatar = document.getElementById('btnCircleAvatar');
-        const btnSquareAvatar = document.getElementById('btnSquareAvatar');
         const btnStartChat = document.getElementById('btnStartChat');
-        const btnSettings = document.getElementById('btnSettings');
         const chatAvatar = document.getElementById('chatAvatar');
         const chatName = document.getElementById('chatName');
         const messagesContainer = document.getElementById('messagesContainer');
@@ -268,43 +225,7 @@
             }
         });
         
-        // 头像选择按钮事件
-        btnDefaultAvatar.addEventListener('click', () => {
-            aiAvatar = 'https://p9-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/dcfea288d2c243fb97a0870b01426c11~tplv-a9rns2rl98-image.image?rcl=20251101152644484E77C140B28E0CA99C&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1764574018&x-signature=8rZjO6DVGrWEs0n4jxkIdp1CPyQ%3D';
-            updateAvatarButtons(btnDefaultAvatar);
-            updateAvatarPreview();
-        });
         
-        btnUploadAvatar.addEventListener('click', () => {
-            avatarUpload.click();
-        });
-        
-        // 头像上传事件
-        avatarUpload.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    aiAvatar = event.target.result;
-                    updateAvatarButtons(btnUploadAvatar);
-                    updateAvatarPreview();
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-        
-        // 头像形状按钮事件
-        btnCircleAvatar.addEventListener('click', () => {
-            avatarShape = 'circle';
-            updateShapeButtons(btnCircleAvatar);
-            updateAvatarPreview();
-        });
-        
-        btnSquareAvatar.addEventListener('click', () => {
-            avatarShape = 'square';
-            updateShapeButtons(btnSquareAvatar);
-            updateAvatarPreview();
-        });
         
         // 开始聊天按钮事件
         btnStartChat.addEventListener('click', () => {
@@ -314,7 +235,7 @@
             // 更新聊天界面的头像和名字
             chatName.textContent = aiName;
             chatAvatar.innerHTML = `<img src="${aiAvatar}" alt="${aiName}" class="w-full h-full object-cover">`;
-            chatAvatar.className = avatarShape === 'circle' ? 'w-10 h-10 rounded-full overflow-hidden mr-3' : 'w-10 h-10 rounded-lg overflow-hidden mr-3';
+            chatAvatar.className = 'w-10 h-10 rounded-full overflow-hidden mr-3'; // 固定为圆形
             
             // 清除消息历史
             messageHistory = [];
@@ -336,10 +257,7 @@
             messageInput.focus();
         });
         
-        // 设置按钮事件
-        btnSettings.addEventListener('click', () => {
-            setupModal.classList.remove('hidden');
-        });
+        
         
         // 发送按钮事件
         btnSend.addEventListener('click', sendMessage);
@@ -365,36 +283,7 @@
             });
         }
         
-        function updateAvatarButtons(activeButton) {
-            const buttons = [btnDefaultAvatar, btnUploadAvatar];
-            buttons.forEach(btn => {
-                if (btn === activeButton) {
-                    btn.classList.remove('bg-gray-200', 'text-gray-700');
-                    btn.classList.add('bg-primary', 'text-white');
-                } else {
-                    btn.classList.remove('bg-primary', 'text-white');
-                    btn.classList.add('bg-gray-200', 'text-gray-700');
-                }
-            });
-        }
         
-        function updateShapeButtons(activeButton) {
-            const buttons = [btnCircleAvatar, btnSquareAvatar];
-            buttons.forEach(btn => {
-                if (btn === activeButton) {
-                    btn.classList.remove('bg-gray-200', 'text-gray-700');
-                    btn.classList.add('bg-primary', 'text-white');
-                } else {
-                    btn.classList.remove('bg-primary', 'text-white');
-                    btn.classList.add('bg-gray-200', 'text-gray-700');
-                }
-            });
-        }
-        
-        function updateAvatarPreview() {
-            avatarPreview.innerHTML = `<img src="${aiAvatar}" alt="预览" class="w-full h-full object-cover">`;
-            avatarPreview.className = avatarShape === 'circle' ? 'w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden' : 'w-20 h-20 rounded-lg bg-gray-200 flex items-center justify-center overflow-hidden';
-        }
         
         function sendMessage() {
             const message = messageInput.value.trim();
@@ -545,4 +434,3 @@
     </script>
 </body>
 </html>
-
