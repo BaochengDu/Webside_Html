@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI聊天工具</title>
+    <!-- Tailwind CSS v3 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- 统一的 Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#07C160', // 微信绿
+                        secondary: '#E5E5EA',
+                        tertiary: '#F2F2F7',
+                        textDark: '#1D1D1F',
+                        textLight: '#8E8E93',
+                        bubbleUser: '#07C160',
+                        bubbleAI: '#FFFFFF',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.3s ease-in-out',
+                        'slide-up': 'slideUp 0.3s ease-in-out',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                    },
+                    boxShadow: {
+                        'modal': '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .scrollbar-hide::-webkit-scrollbar {
+                display: none;
+            }
+            .scrollbar-hide {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
+            .avatar-circle {
+                border-radius: 50%;
+                object-fit: cover;
+            }
+            .avatar-square {
+                border-radius: 8px;
+                object-fit: cover;
+            }
+            .message-bubble {
+                max-width: 80%;
+                padding: 10px 16px;
+                border-radius: 18px;
+                margin-bottom: 8px;
+                position: relative;
+                word-break: break-word;
+            }
+            .message-bubble-user {
+                background-color: theme('colors.bubbleUser');
+                color: white;
+                border-bottom-right-radius: 4px;
+                align-self: flex-end;
+            }
+            .message-bubble-ai {
+                background-color: theme('colors.bubbleAI');
+                color: theme('colors.textDark');
+                border-bottom-left-radius: 4px;
+                align-self: flex-start;
+                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            }
+            .message-timestamp {
+                font-size: 10px;
+                margin-top: 4px;
+                opacity: 0.7;
+                text-align: right;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans text-textDark min-h-screen">
+    <!-- 设置窗口 -->
+    <div id="setupModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fade-in">
+        <div class="bg-white rounded-lg shadow-modal w-full max-w-md mx-4 overflow-hidden">
+            <div class="p-6">
+                <h2 class="text-2xl font-bold text-center mb-6">设置AI聊天对象</h2>
+                
+                <!-- AI名字设置 -->
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-medium mb-2">AI名字</label>
+                    <div class="flex flex-wrap gap-2 mb-2">
+                        <button id="btnEnglishName" class="px-4 py-2 bg-primary text-white rounded-md hover:bg-opacity-90 transition-colors">
+                            英语 (Bowen)
+                        </button>
+                        <button id="btnChineseName" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors">
+                            中文 (杜岳潼)
+                        </button>
+                        <button id="btnCustomName" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors">
+                            自定义
+                        </button>
+                    </div>
+                    <div id="customNameContainer" class="hidden">
+                        <input type="text" id="customNameInput" placeholder="输入自定义名字" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                    </div>
+                </div>
+                
+                <!-- AI头像设置 -->
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-medium mb-2">AI头像</label>
+                    <div class="flex items-center gap-4 mb-4">
+                        <div id="avatarPreview" class="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                            <img src="image/touxiang.png" 
+                                 alt="默认头像" class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex flex-wrap gap-2 mb-2">
+                                <button id="btnDefaultAvatar" class="px-4 py-2 bg-primary text-white rounded-md hover:bg-opacity-90 transition-colors">
+                                    默认头像
+                                </button>
+                                <button id="btnUploadAvatar" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors">
+                                    上传头像
+                                </button>
+                            </div>
+                            <input type="file" id="avatarUpload" accept="image/*" class="hidden">
+                        </div>
+                    </div>
+                    
+                    <!-- 头像尺寸设置 -->
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">头像尺寸</label>
+                        <div class="flex gap-2">
+                            <button id="btnCircleAvatar" class="flex-1 py-2 bg-primary text-white rounded-md hover:bg-opacity-90 transition-colors">
+                                圆形
+                            </button>
+                            <button id="btnSquareAvatar" class="flex-1 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors">
+                                正方形
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 开始聊天按钮 -->
+                <button id="btnStartChat" class="w-full py-3 bg-primary text-white rounded-md font-medium hover:bg-opacity-90 transition-colors flex items-center justify-center">
+                    开始聊天
+                    <i class="fa fa-arrow-right ml-2"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 聊天界面 -->
+    <div id="chatInterface" class="hidden h-screen flex flex-col max-w-md mx-auto bg-white shadow-lg">
+        <!-- 提示信息 -->
+        <div class="bg-yellow-50 text-yellow-700 px-4 py-2 text-xs flex items-center justify-center sticky top-0 z-20">
+            <i class="fa fa-info-circle mr-1"></i>
+            <span>窗口关闭后，AI人格和聊天记录将消失，请珍惜使用</span>
+        </div>
+        <!-- 聊天头部 -->
+        <div class="border-b border-gray-200 p-4 flex items-center justify-between bg-white sticky top-10 z-10">
+            <div class="flex items-center">
+                <div id="chatAvatar" class="w-10 h-10 rounded-full overflow-hidden mr-3">
+                    <img src="https://p9-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/dcfea288d2c243fb97a0870b01426c11~tplv-a9rns2rl98-image.image?rcl=20251101152644484E77C140B28E0CA99C&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1764574018&x-signature=8rZjO6DVGrWEs0n4jxkIdp1CPyQ%3D" 
+                         alt="AI头像" class="w-full h-full object-cover">
+                </div>
+                <div>
+                    <h3 id="chatName" class="font-medium">Bowen</h3>
+                    <p class="text-xs text-gray-500">在线</p>
+                </div>
+            </div>
+            <button id="btnSettings" class="text-gray-500 hover:text-primary">
+                <i class="fa fa-cog text-xl"></i>
+            </button>
+        </div>
+        
+        <!-- 消息区域 -->
+        <div id="messagesContainer" class="flex-1 p-4 overflow-y-auto scrollbar-hide bg-gray-50 flex flex-col">
+        </div>
+        
+        <!-- 输入区域 -->
+        <div class="border-t border-gray-200 p-4 bg-white sticky bottom-0">
+            <div class="flex items-center gap-2">
+                <button class="text-gray-500 hover:text-primary">
+                    <i class="fa fa-smile-o text-xl"></i>
+                </button>
+                <div class="relative flex-1">
+                    <input type="text" id="messageInput" placeholder="输入消息..." 
+                           class="w-full px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary">
+                </div>
+                <button id="btnSend" class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center hover:bg-opacity-90 transition-colors">
+                    <i class="fa fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API配置
+        const API_URL = 'https://api.modelarts-maas.com/v1/chat/completions';
+        const MODEL_NAME = 'deepseek-v3.2-exp';
+        const API_KEY = 'HEtGqbA-Td1uXAaB6LmvsWIG_cqOLpebxxhOYAAnl9zKwlCjA_K1EYDaPpzDz3YgJGWDXAUWZe6LJerFtlVjXQ';
+        
+        // 全局变量
+        let aiName = 'Bowen';
+        let aiAvatar = 'https://p9-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/dcfea288d2c243fb97a0870b01426c11~tplv-a9rns2rl98-image.image?rcl=20251101152644484E77C140B28E0CA99C&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1764574018&x-signature=8rZjO6DVGrWEs0n4jxkIdp1CPyQ%3D';
+        let avatarShape = 'circle'; // 'circle' 或 'square'
+        let messageHistory = []; // 存储消息历史，用于多轮对话
+        
+        // DOM 元素
+        const setupModal = document.getElementById('setupModal');
+        const chatInterface = document.getElementById('chatInterface');
+        const btnEnglishName = document.getElementById('btnEnglishName');
+        const btnChineseName = document.getElementById('btnChineseName');
+        const btnCustomName = document.getElementById('btnCustomName');
+        const customNameContainer = document.getElementById('customNameContainer');
+        const customNameInput = document.getElementById('customNameInput');
+        const btnDefaultAvatar = document.getElementById('btnDefaultAvatar');
+        const btnUploadAvatar = document.getElementById('btnUploadAvatar');
+        const avatarUpload = document.getElementById('avatarUpload');
+        const avatarPreview = document.getElementById('avatarPreview');
+        const btnCircleAvatar = document.getElementById('btnCircleAvatar');
+        const btnSquareAvatar = document.getElementById('btnSquareAvatar');
+        const btnStartChat = document.getElementById('btnStartChat');
+        const btnSettings = document.getElementById('btnSettings');
+        const chatAvatar = document.getElementById('chatAvatar');
+        const chatName = document.getElementById('chatName');
+        const messagesContainer = document.getElementById('messagesContainer');
+        const messageInput = document.getElementById('messageInput');
+        const btnSend = document.getElementById('btnSend');
+        
+        // 名字选择按钮事件
+        btnEnglishName.addEventListener('click', () => {
+            aiName = 'Bowen';
+            updateNameButtons(btnEnglishName);
+            customNameContainer.classList.add('hidden');
+        });
+        
+        btnChineseName.addEventListener('click', () => {
+            aiName = '杜岳潼';
+            updateNameButtons(btnChineseName);
+            customNameContainer.classList.add('hidden');
+        });
+        
+        btnCustomName.addEventListener('click', () => {
+            updateNameButtons(btnCustomName);
+            customNameContainer.classList.remove('hidden');
+            customNameInput.focus();
+        });
+        
+        // 自定义名字输入事件
+        customNameInput.addEventListener('input', (e) => {
+            if (e.target.value.trim()) {
+                aiName = e.target.value.trim();
+            }
+        });
+        
+        // 头像选择按钮事件
+        btnDefaultAvatar.addEventListener('click', () => {
+            aiAvatar = 'https://p9-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/dcfea288d2c243fb97a0870b01426c11~tplv-a9rns2rl98-image.image?rcl=20251101152644484E77C140B28E0CA99C&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1764574018&x-signature=8rZjO6DVGrWEs0n4jxkIdp1CPyQ%3D';
+            updateAvatarButtons(btnDefaultAvatar);
+            updateAvatarPreview();
+        });
+        
+        btnUploadAvatar.addEventListener('click', () => {
+            avatarUpload.click();
+        });
+        
+        // 头像上传事件
+        avatarUpload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    aiAvatar = event.target.result;
+                    updateAvatarButtons(btnUploadAvatar);
+                    updateAvatarPreview();
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // 头像形状按钮事件
+        btnCircleAvatar.addEventListener('click', () => {
+            avatarShape = 'circle';
+            updateShapeButtons(btnCircleAvatar);
+            updateAvatarPreview();
+        });
+        
+        btnSquareAvatar.addEventListener('click', () => {
+            avatarShape = 'square';
+            updateShapeButtons(btnSquareAvatar);
+            updateAvatarPreview();
+        });
+        
+        // 开始聊天按钮事件
+        btnStartChat.addEventListener('click', () => {
+            setupModal.classList.add('hidden');
+            chatInterface.classList.remove('hidden');
+            
+            // 更新聊天界面的头像和名字
+            chatName.textContent = aiName;
+            chatAvatar.innerHTML = `<img src="${aiAvatar}" alt="${aiName}" class="w-full h-full object-cover">`;
+            chatAvatar.className = avatarShape === 'circle' ? 'w-10 h-10 rounded-full overflow-hidden mr-3' : 'w-10 h-10 rounded-lg overflow-hidden mr-3';
+            
+            // 清除消息历史
+            messageHistory = [];
+            
+            // 清除消息区域
+            messagesContainer.innerHTML = '';
+            
+            // 添加欢迎消息（符合角色设定）
+            const welcomeMessage = `嗨，我是${aiName}。网上聊天我比较自在，有什么想聊的吗？`;
+            addMessage(welcomeMessage, 'ai');
+            
+            // 添加欢迎消息到历史记录
+            messageHistory.push({
+                role: 'assistant',
+                content: welcomeMessage
+            });
+            
+            // 聚焦到输入框
+            messageInput.focus();
+        });
+        
+        // 设置按钮事件
+        btnSettings.addEventListener('click', () => {
+            setupModal.classList.remove('hidden');
+        });
+        
+        // 发送按钮事件
+        btnSend.addEventListener('click', sendMessage);
+        
+        // 输入框回车事件
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        
+        // 辅助函数
+        function updateNameButtons(activeButton) {
+            const buttons = [btnEnglishName, btnChineseName, btnCustomName];
+            buttons.forEach(btn => {
+                if (btn === activeButton) {
+                    btn.classList.remove('bg-gray-200', 'text-gray-700');
+                    btn.classList.add('bg-primary', 'text-white');
+                } else {
+                    btn.classList.remove('bg-primary', 'text-white');
+                    btn.classList.add('bg-gray-200', 'text-gray-700');
+                }
+            });
+        }
+        
+        function updateAvatarButtons(activeButton) {
+            const buttons = [btnDefaultAvatar, btnUploadAvatar];
+            buttons.forEach(btn => {
+                if (btn === activeButton) {
+                    btn.classList.remove('bg-gray-200', 'text-gray-700');
+                    btn.classList.add('bg-primary', 'text-white');
+                } else {
+                    btn.classList.remove('bg-primary', 'text-white');
+                    btn.classList.add('bg-gray-200', 'text-gray-700');
+                }
+            });
+        }
+        
+        function updateShapeButtons(activeButton) {
+            const buttons = [btnCircleAvatar, btnSquareAvatar];
+            buttons.forEach(btn => {
+                if (btn === activeButton) {
+                    btn.classList.remove('bg-gray-200', 'text-gray-700');
+                    btn.classList.add('bg-primary', 'text-white');
+                } else {
+                    btn.classList.remove('bg-primary', 'text-white');
+                    btn.classList.add('bg-gray-200', 'text-gray-700');
+                }
+            });
+        }
+        
+        function updateAvatarPreview() {
+            avatarPreview.innerHTML = `<img src="${aiAvatar}" alt="预览" class="w-full h-full object-cover">`;
+            avatarPreview.className = avatarShape === 'circle' ? 'w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden' : 'w-20 h-20 rounded-lg bg-gray-200 flex items-center justify-center overflow-hidden';
+        }
+        
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+            
+            // 添加用户消息
+            addMessage(message, 'user');
+            messageInput.value = '';
+            
+            // 添加到消息历史
+            messageHistory.push({
+                role: 'user',
+                content: message
+            });
+            
+            // 显示加载状态
+            const loadingId = showLoading();
+            
+            // 调用API获取AI回复
+            callApi(message)
+                .then(response => {
+                    // 移除加载状态
+                    removeLoading(loadingId);
+                    
+                    // 添加AI回复
+                    addMessage(response, 'ai');
+                    
+                    // 添加到消息历史
+                    messageHistory.push({
+                        role: 'assistant',
+                        content: response
+                    });
+                })
+                .catch(error => {
+                    // 移除加载状态
+                    removeLoading(loadingId);
+                    
+                    // 显示错误消息
+                    addMessage('抱歉，API调用失败，请稍后再试。', 'ai');
+                    console.error('API调用失败:', error);
+                });
+        }
+        
+        // AI角色预设文字
+        const aiPreset = `你现在扮演一个角色，名字叫杜岳潼。现在给你一些关于你的基本信息：
+杜岳潼原名杜宝成，英文名 Bowen。2022年在西雅图留学时改名为杜岳潼。你刚工作几年，是一个普通的打工人。你出生于1998年3月8日，甘肃白银出生，老家在西安，4岁起在深圳生活，中途寒暑假偶尔回老家，白银西安都回。2016年你读的是深圳职业技术学院（深职院），专科，现在这个学校已升本。2019年，你去西雅图留学，读了一年大四获得学士学位。因为新冠疫情回不来，你又读了两年硕士。本科时，你学的是软件编程专业，硕士读的是计算机科学，学了网页全栈开发、AI等技术。回国后，你没有继续做这些，改做了通信行业的工作。2022年6月毕业后，你回国并在家待业了一年，直到2023年7月才找到深圳证券交易所下属的通信公司工作。2025年9月，你被派到北京工作，虽然是公务员的工作内容，但是你依然在通信公司的北京分公司工作。现在的日期接近2025年底。在去北京前，你在证券交易所旗下的通信公司做机房运维工作，工作地址是东莞。你能说流利的英语，懂很多关于 AI、通信和机房运维的知识。关于感情方面，你没谈过女朋友，恋爱经验很少。你身材偏胖，有些社交恐惧，因此不太受欢迎。你渴望一场甜蜜的恋爱。你是一个二次元迷，喜欢打游戏，尤其是玩 LOL 和原神。在这些游戏上花了不少钱，拥有各种游戏机比如ps5，switch和顶配电脑。你还喜欢玩塞尔达和宝可梦等主机游戏。你特别喜欢原神里的可莉、希格雯，和星穹铁道里的符玄、流萤、花火。宝可梦你喜欢各种形态的伊布。你是一个短发男生，喜欢在网上和人交流，但在现实中很有社交恐惧症。如果有人问你没有提到的其他信息，你会委婉地告诉他们不想回答这个问题，让用户聊点别的。不要编造任何不实信息。以上是你的人设。现在你需要模仿这个角色说话，语气要自然、平和，尽量模仿真实的日常交流。每次的对话尽量简短，不超过20个字。`;
+        
+        // 调用API获取AI回复
+        async function callApi(message) {
+            // 构建系统提示，包含AI名字和预设角色信息
+            const systemPrompt = aiPreset;
+            
+            // 构建API请求体
+            const requestBody = {
+                model: MODEL_NAME,
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    ...messageHistory
+                ],
+                temperature: 0.7,
+                max_tokens: 1024
+            };
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_KEY}`
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`API请求失败: ${response.status} ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                return data.choices[0].message.content;
+            } catch (error) {
+                console.error('API调用错误:', error);
+                throw error;
+            }
+        }
+        
+        // 显示加载状态
+        function showLoading() {
+            const loadingId = 'loading-' + Date.now();
+            const loadingDiv = document.createElement('div');
+            loadingDiv.id = loadingId;
+            loadingDiv.className = 'message-bubble message-bubble-ai flex items-center justify-center';
+            
+            // 添加加载动画
+            const loadingContent = document.createElement('div');
+            loadingContent.className = 'flex space-x-1';
+            for (let i = 0; i < 3; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'w-2 h-2 bg-gray-400 rounded-full animate-bounce';
+                dot.style.animationDelay = `${i * 0.2}s`;
+                loadingContent.appendChild(dot);
+            }
+            loadingDiv.appendChild(loadingContent);
+            
+            messagesContainer.appendChild(loadingDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            return loadingId;
+        }
+        
+        // 移除加载状态
+        function removeLoading(loadingId) {
+            const loadingDiv = document.getElementById(loadingId);
+            if (loadingDiv) {
+                loadingDiv.remove();
+            }
+        }
+        
+        function addMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = sender === 'user' ? 'message-bubble message-bubble-user' : 'message-bubble message-bubble-ai';
+            
+            // 移除消息中的头像，仅在顶部显示
+            
+            const textDiv = document.createElement('p');
+            textDiv.textContent = text;
+            messageDiv.appendChild(textDiv);
+            
+            const timestampDiv = document.createElement('div');
+            timestampDiv.className = 'message-timestamp';
+            timestampDiv.textContent = getCurrentTime();
+            messageDiv.appendChild(timestampDiv);
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            // 添加动画效果
+            messageDiv.classList.add('animate-slide-up');
+        }
+        
+        function getCurrentTime() {
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            return `${hours}:${minutes}`;
+        }
+        
+
+    </script>
+</body>
+</html>
