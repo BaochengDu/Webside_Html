@@ -28,6 +28,7 @@
                     animation: {
                         'fade-in': 'fadeIn 0.3s ease-in-out',
                         'slide-up': 'slideUp 0.3s ease-in-out',
+                        'pulse-recording': 'pulseRecording 1.5s infinite',
                     },
                     keyframes: {
                         fadeIn: {
@@ -37,6 +38,11 @@
                         slideUp: {
                             '0%': { transform: 'translateY(20px)', opacity: '0' },
                             '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        pulseRecording: {
+                            '0%': { transform: 'scale(1)', opacity: '1' },
+                            '50%': { transform: 'scale(1.1)', opacity: '0.7' },
+                            '100%': { transform: 'scale(1)', opacity: '1' },
                         },
                     },
                     boxShadow: {
@@ -158,8 +164,9 @@
         <!-- 输入区域 -->
         <div class="border-t border-gray-200 p-4 bg-white sticky bottom-0">
             <div class="flex items-center gap-2">
-                <button class="text-gray-500 hover:text-primary">
-                    <i class="fa fa-smile-o text-xl"></i>
+                <!-- 语音输入按钮 -->
+                <button id="btnVoiceInput" class="text-gray-500 hover:text-primary transition-colors">
+                    <i class="fa fa-microphone text-xl"></i>
                 </button>
                 <div class="relative flex-1">
                     <input type="text" id="messageInput" placeholder="输入消息..." 
@@ -168,6 +175,17 @@
                 <button id="btnSend" class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center hover:bg-opacity-90 transition-colors">
                     <i class="fa fa-paper-plane"></i>
                 </button>
+            </div>
+            <!-- 语音识别状态显示 -->
+            <div id="voiceStatus" class="hidden mt-2 text-center">
+                <div id="voiceStatusText" class="text-sm text-gray-600"></div>
+                <div id="voiceWave" class="flex justify-center mt-1 space-x-1 hidden">
+                    <div class="w-1 h-4 bg-primary rounded-full animate-pulse-recording"></div>
+                    <div class="w-1 h-6 bg-primary rounded-full animate-pulse-recording" style="animation-delay: 0.2s"></div>
+                    <div class="w-1 h-4 bg-primary rounded-full animate-pulse-recording" style="animation-delay: 0.4s"></div>
+                    <div class="w-1 h-6 bg-primary rounded-full animate-pulse-recording" style="animation-delay: 0.6s"></div>
+                    <div class="w-1 h-4 bg-primary rounded-full animate-pulse-recording" style="animation-delay: 0.8s"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -178,12 +196,24 @@
         const MODEL_NAME = 'deepseek-v3.2-exp';
         const API_KEY = 'HEtGqbA-Td1uXAaB6LmvsWIG_cqOLpebxxhOYAAnl9zKwlCjA_K1EYDaPpzDz3YgJGWDXAUWZe6LJerFtlVjXQ';
         
+        // 百度语音识别配置
+        const BAIDU_APP_ID = '7187093';
+        const BAIDU_API_KEY = 'fgF3kvYhDVpwzxaPOiTkdgNk';
+        const BAIDU_SECRET_KEY = 'yjd7eOMLPLOY0Qgy5BZnuIkbnAyUzHF3';
+        const BAIDU_ASR_URL = 'https://vop.baidu.com/pro_api'; // 百度语音识别API地址
+        
         // 全局变量
         let aiName = '杜岳潼'; // 默认使用中文名字
         let aiAvatar = 'image/touxiang.png'; // 默认头像路径
         let avatarShape = 'circle'; // 固定为圆形
         let messageHistory = []; // 存储消息历史，用于多轮对话
         let aiPreset = ''; // 将从文件加载
+        
+        // 语音识别相关变量
+        let isRecording = false;
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let accessToken = null;
         
         // DOM 元素
         const setupModal = document.getElementById('setupModal');
@@ -199,6 +229,10 @@
         const messagesContainer = document.getElementById('messagesContainer');
         const messageInput = document.getElementById('messageInput');
         const btnSend = document.getElementById('btnSend');
+        const btnVoiceInput = document.getElementById('btnVoiceInput');
+        const voiceStatus = document.getElementById('voiceStatus');
+        const voiceStatusText = document.getElementById('voiceStatusText');
+        const voiceWave = document.getElementById('voiceWave');
         
         // 初始化：加载AI预设
         async function loadAiPreset() {
@@ -219,7 +253,28 @@
         // 页面加载时初始化
         document.addEventListener('DOMContentLoaded', function() {
             loadAiPreset();
+            // 获取百度语音识别的访问令牌
+            getBaiduAccessToken();
         });
+        
+        // 获取百度语音识别访问令牌
+        async function getBaiduAccessToken() {
+            try {
+                const response = await fetch(`https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=${BAIDU_API_KEY}&client_secret=${BAIDU_SECRET_KEY}`, {
+                    method: 'POST'
+                });
+                
+                if (!response.ok) {
+                    throw new Error('获取访问令牌失败');
+                }
+                
+                const data = await response.json();
+                accessToken = data.access_token;
+                console.log('百度语音识别访问令牌获取成功');
+            } catch (error) {
+                console.error('获取百度语音识别访问令牌失败:', error);
+            }
+        }
         
         // 名字选择按钮事件
         btnEnglishName.addEventListener('click', () => {
@@ -291,6 +346,9 @@
             }
         });
         
+        // 语音输入按钮事件
+        btnVoiceInput.addEventListener('click', toggleVoiceInput);
+        
         // 辅助函数
         function updateNameButtons(activeButton) {
             const buttons = [btnEnglishName, btnChineseName, btnCustomName];
@@ -305,7 +363,169 @@
             });
         }
         
+        // 语音输入功能
+        async function toggleVoiceInput() {
+            if (isRecording) {
+                stopRecording();
+            } else {
+                await startRecording();
+            }
+        }
         
+        // 开始录音
+        async function startRecording() {
+            try {
+                // 请求麦克风权限
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                
+                // 创建MediaRecorder实例
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+                
+                // 收集音频数据
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        audioChunks.push(event.data);
+                    }
+                };
+                
+                // 录音结束时的处理
+                mediaRecorder.onstop = async () => {
+                    // 创建Blob对象
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    
+                    // 停止所有音频轨道
+                    stream.getTracks().forEach(track => track.stop());
+                    
+                    // 语音识别
+                    await speechToText(audioBlob);
+                    
+                    // 重置状态
+                    isRecording = false;
+                    updateVoiceUI(false);
+                };
+                
+                // 开始录音
+                mediaRecorder.start();
+                isRecording = true;
+                updateVoiceUI(true);
+                
+            } catch (error) {
+                console.error('无法访问麦克风:', error);
+                alert('无法访问麦克风，请确保已授予麦克风权限。');
+                updateVoiceUI(false);
+            }
+        }
+        
+        // 停止录音
+        function stopRecording() {
+            if (mediaRecorder && isRecording) {
+                mediaRecorder.stop();
+            }
+        }
+        
+        // 更新语音输入UI状态
+        function updateVoiceUI(recording) {
+            if (recording) {
+                // 录音中状态
+                btnVoiceInput.innerHTML = '<i class="fa fa-stop text-xl"></i>';
+                btnVoiceInput.classList.remove('text-gray-500', 'hover:text-primary');
+                btnVoiceInput.classList.add('text-red-500', 'hover:text-red-600');
+                
+                voiceStatusText.textContent = '正在录音... 点击停止';
+                voiceWave.classList.remove('hidden');
+                voiceStatus.classList.remove('hidden');
+            } else {
+                // 非录音状态
+                btnVoiceInput.innerHTML = '<i class="fa fa-microphone text-xl"></i>';
+                btnVoiceInput.classList.remove('text-red-500', 'hover:text-red-600');
+                btnVoiceInput.classList.add('text-gray-500', 'hover:text-primary');
+                
+                voiceStatusText.textContent = '';
+                voiceWave.classList.add('hidden');
+                voiceStatus.classList.add('hidden');
+            }
+        }
+        
+        // 语音转文字
+        async function speechToText(audioBlob) {
+            if (!accessToken) {
+                console.error('百度语音识别访问令牌未获取');
+                voiceStatusText.textContent = '语音识别服务未就绪，请稍后再试';
+                setTimeout(() => {
+                    voiceStatus.classList.add('hidden');
+                }, 3000);
+                return;
+            }
+            
+            voiceStatusText.textContent = '正在识别语音...';
+            voiceWave.classList.add('hidden');
+            
+            try {
+                // 将音频Blob转换为Base64
+                const base64Audio = await blobToBase64(audioBlob);
+                
+                // 准备请求数据
+                const formData = new FormData();
+                formData.append('speech', base64Audio.split(',')[1]); // 移除Base64前缀
+                formData.append('format', 'wav');
+                formData.append('rate', 16000); // 采样率
+                formData.append('channel', 1); // 单声道
+                formData.append('cuid', 'web_chat_app');
+                formData.append('token', accessToken);
+                formData.append('dev_pid', 1537); // 普通话(支持简单的英文识别)
+                
+                // 发送语音识别请求
+                const response = await fetch(BAIDU_ASR_URL, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`语音识别请求失败: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.err_no === 0) {
+                    // 识别成功
+                    const recognizedText = result.result[0];
+                    messageInput.value = recognizedText;
+                    voiceStatusText.textContent = '识别完成';
+                    
+                    // 自动聚焦到输入框
+                    messageInput.focus();
+                    
+                    // 2秒后隐藏状态提示
+                    setTimeout(() => {
+                        voiceStatus.classList.add('hidden');
+                    }, 2000);
+                    
+                } else {
+                    // 识别失败
+                    throw new Error(`语音识别错误: ${result.err_msg}`);
+                }
+                
+            } catch (error) {
+                console.error('语音识别失败:', error);
+                voiceStatusText.textContent = '语音识别失败，请重试';
+                
+                // 3秒后隐藏状态提示
+                setTimeout(() => {
+                    voiceStatus.classList.add('hidden');
+                }, 3000);
+            }
+        }
+        
+        // 将Blob转换为Base64
+        function blobToBase64(blob) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        }
         
         function sendMessage() {
             const message = messageInput.value.trim();
