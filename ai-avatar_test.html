@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>百度语音识别测试</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen text-gray-800">
+
+<h1 class="text-2xl font-bold mb-6">🎙️ 百度语音识别测试</h1>
+
+<div class="bg-white p-6 rounded-xl shadow-md w-full max-w-md text-center">
+  <button id="recordBtn" class="bg-green-500 hover:bg-green-600 text-white font-medium px-6 py-3 rounded-lg">
+    🎤 开始录音
+  </button>
+  <p id="status" class="mt-3 text-gray-600">等待录音开始...</p>
+  <textarea id="result" class="w-full mt-4 h-32 border rounded-md p-3 resize-none" placeholder="识别结果会显示在这里"></textarea>
+</div>
+
+<script>
+const BAIDU_API_KEY = "fgF3kVYhDVpwzxaPOiTkdgNk";
+const BAIDU_SECRET_KEY = "yjd7eOMLPLOY0Qgy5BZnuIkbnAyUzHF3";
+
+let recorder, audioChunks = [], isRecording = false;
+const btn = document.getElementById("recordBtn");
+const status = document.getElementById("status");
+const result = document.getElementById("result");
+
+btn.addEventListener("click", async () => {
+  if (!isRecording) {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      recorder = new MediaRecorder(stream);
+      audioChunks = [];
+      recorder.ondataavailable = e => audioChunks.push(e.data);
+      recorder.onstart = () => {
+        status.textContent = "🎙️ 正在录音... 点击按钮停止";
+        btn.textContent = "⏹ 停止录音";
+        btn.classList.replace("bg-green-500", "bg-red-500");
+      };
+      recorder.onstop = async () => {
+        status.textContent = "⏳ 录音完成，正在识别...";
+        btn.textContent = "🎤 开始录音";
+        btn.classList.replace("bg-red-500", "bg-green-500");
+        const blob = new Blob(audioChunks, { type: "audio/webm" });
+        await recognizeVoice(blob);
+      };
+      recorder.start();
+      isRecording = true;
+    } catch (err) {
+      console.error("无法获取麦克风权限：", err);
+      alert("请允许浏览器访问麦克风");
+    }
+  } else {
+    recorder.stop();
+    isRecording = false;
+  }
+});
+
+async function recognizeVoice(blob) {
+  try {
+    const arrayBuffer = await blob.arrayBuffer();
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+    const resampled = await resampleAudio(audioBuffer, 16000);
+    const pcm = convertTo16BitPCM(resampled);
+    const token = await getAccessToken();
+    const data = await callBaiduASR(pcm, token);
+    console.log("百度返回：", data);
+    if (data && data.result) {
+      result.value = data.result.join("\n");
+      status.textContent = "✅ 识别成功";
+    } else {
+      result.value = "";
+      status.textContent = "❌ 未识别到语音";
+    }
+  } catch (e) {
+    console.error("识别失败：", e);
+    status.textContent = "⚠️ 识别失败，请重试";
+  }
+}
+
+function resampleAudio(audioBuffer, targetRate) {
+  return new Promise(resolve => {
+    const srcRate = audioBuffer.sampleRate;
+    if (srcRate === targetRate) return resolve(audioBuffer);
+    const offlineCtx = new OfflineAudioContext(1, audioBuffer.duration * targetRate, targetRate);
+    const src = offlineCtx.createBufferSource();
+    const mono = offlineCtx.createBuffer(1, audioBuffer.length, srcRate);
+    const left = audioBuffer.getChannelData(0);
+    const right = audioBuffer.numberOfChannels > 1 ? audioBuffer.getChannelData(1) : left;
+    const monoData = mono.getChannelData(0);
+    for (let i = 0; i < monoData.length; i++) monoData[i] = (left[i] + right[i]) / 2;
+    src.buffer = mono;
+    src.connect(offlineCtx.destination);
+    src.start();
+    offlineCtx.startRendering().then(resolve);
+  });
+}
+
+function convertTo16BitPCM(audioBuffer) {
+  const data = audioBuffer.getChannelData(0);
+  const buffer = new ArrayBuffer(data.length * 2);
+  const view = new DataView(buffer);
+  for (let i = 0; i < data.length; i++) {
+    const val = Math.max(-1, Math.min(1, data[i]));
+    view.setInt16(i * 2, val < 0 ? val * 0x8000 : val * 0x7FFF, true);
+  }
+  return buffer;
+}
+
+function arrayBufferToBase64(buffer) {
+  let binary = "";
+  const bytes = new Uint8Array(buffer);
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize)
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+  return btoa(binary);
+}
+
+async function getAccessToken() {
+  const res = await fetch("https://baidu-voice-proxy.onrender.com/baidu_token");
+  const data = await res.json();
+  return data.access_token;
+}
+
+async function callBaiduASR(pcm, token) {
+  const base64Data = arrayBufferToBase64(pcm);
+  const res = await fetch("https://vop.baidu.com/server_api", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      format: "pcm",
+      rate: 16000,
+      channel: 1,
+      token: token,
+      cuid: "voice-test-client",
+      speech: base64Data,
+      len: pcm.byteLength,
+      dev_pid: 1537
+    })
+  });
+  return await res.json();
+}
+</script>
+</body>
+</html>
